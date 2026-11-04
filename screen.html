@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>شاشة العرض – مسابقة ETC</title>
+  <meta name="theme-color" content="#17264F" />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="images/club-app-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/screen.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+</head>
+<body class="screen">
+  <div id="pb"></div>
+  <div class="disc corner" id="corner"><img src="images/club-logo.png" alt="" /></div>
+
+  <div class="stage"><div class="in">
+    <!-- الانتظار + QR -->
+    <section id="lobby" data-view hidden>
+      <div class="disc dbig"><img src="images/club-logo.png" alt="ETC" /></div>
+      <span class="ev s-ev">فعالية انطلاقة النادي الهندسي والتكنولوجي</span>
+      <h1 class="s-title">مسابقة<br /><em>الانطلاقة</em></h1>
+      <div class="join-card">
+        <div id="qr" class="qr"></div>
+        <div class="join-txt">
+          <b>امسح الكود وادخل باسمك</b>
+          <span id="url" class="url"></span>
+          <span id="lCount" class="count" hidden></span>
+        </div>
+      </div>
+      <div id="names" class="names"></div>
+    </section>
+
+    <!-- السؤال -->
+    <section id="q" data-view hidden>
+      <span class="chip s-chip" id="qn"></span>
+      <div id="ringSlot" class="s-ring"></div>
+      <div id="qAns" class="s-ans" hidden><b id="ac">0</b><small>أجابوا</small></div>
+      <div class="card paper s-qcard"><p id="qt"></p></div>
+      <div id="op" class="s-opts"></div>
+    </section>
+
+    <!-- النتيجة -->
+    <section id="res" data-view hidden>
+      <span class="chip s-chip" id="rn"></span>
+      <h2 class="s-h2" id="rt"></h2>
+      <div id="rbars" class="s-bars"></div>
+    </section>
+
+    <!-- الترتيب -->
+    <section id="bd" data-view hidden>
+      <span class="ev s-ev2" id="bChip"></span>
+      <h1 class="s-btitle" id="bh"></h1>
+      <div id="podium" class="podium s-podium"></div>
+      <div id="ls" class="list s-list"></div>
+    </section>
+  </div></div>
+
+  <div class="s-ui">
+    <button id="fs" type="button" aria-label="ملء الشاشة" title="ملء الشاشة (F)">⛶</button>
+  </div>
+
+  <script type="module" src="js/screen.js"></script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+/* شاشة العرض — مسرح ثابت 1280×720 بيتكبّر على قد الشاشة (نفس Beyond the Lecture) */
+html, body.screen { height: 100%; overflow: hidden; }
+body.screen { transition: background 0.8s; }
+body.screen.light {
+  color-scheme: light;
+  background: radial-gradient(900px 600px at 88% 0, #d6e8fa 0, transparent 62%), radial-gradient(900px 600px at 6% 100%, #ddf3ea 0, transparent 58%), var(--paper);
+}
+body.light .sun { opacity: 0; }
+body.light .gear { color: var(--navy); }
+body.light .gear.g1 { opacity: 0.06; }
+body.light .circ { opacity: 0; }
+body.screen .circ { inset-inline-start: auto; left: 40%; top: 18px; width: 170px; opacity: 0.4; }
+.sun, .circ { transition: opacity 0.8s; }
+
+.stage { position: fixed; inset: 0; }
+.in { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; transform: translate(-50%, -50%) scale(var(--k, 1)); }
+.in > [data-view] { position: absolute; inset: 0; display: block; padding: 0; text-align: right; }
+.in > [data-view] > * { position: absolute; }
+
+#pb { position: fixed; top: 0; left: 0; height: 5px; width: 0; z-index: 10; background: linear-gradient(90deg, var(--blue), var(--green), var(--gold)); transition: width 0.9s var(--ease); }
+.disc.corner { position: fixed; top: 16px; left: 20px; width: 74px; height: 74px; z-index: 9; transition: opacity 0.6s, transform 0.6s; }
+.disc.corner.off { opacity: 0; transform: scale(0.4); }
+.s-ui { position: fixed; left: 18px; bottom: 16px; z-index: 9; }
+.s-ui button { width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(207, 180, 96, 0.7); background: rgba(23, 38, 79, 0.75); color: #fff; font-size: 18px; opacity: 0.35; transition: 0.25s; }
+.s-ui button:hover { opacity: 1; background: var(--gold); color: var(--navy); }
+
+/* ----- الانتظار ----- */
+.disc.dbig { left: 110px; top: 100px; width: 390px; height: 390px; box-shadow: 0 0 0 10px rgba(207, 180, 96, 0.5), 0 0 90px rgba(207, 180, 96, 0.45); animation: glow 3s ease-in-out infinite; }
+#lobby.enter .dbig { animation: zoom 1s var(--ease) both, glow 3s 1s ease-in-out infinite; }
+.s-ev { right: 120px; top: 70px; font-size: 22px; padding: 8px 24px; }
+.s-title { right: 120px; top: 125px; font-size: 84px; line-height: 1.12; }
+.join-card {
+  right: 120px; top: 380px; width: 600px; display: flex; gap: 26px; align-items: center;
+  padding: 20px; border-radius: 28px; background: #fff; color: var(--ink);
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.6); border-inline-start: 8px solid var(--gold);
+}
+.qr { flex: none; width: 236px; height: 236px; border-radius: 12px; overflow: hidden; background: #fff; }
+.qr img, .qr canvas { display: block; width: 100%; height: 100%; }
+.join-txt { display: flex; flex-direction: column; gap: 12px; }
+.join-txt b { font-size: 30px; line-height: 1.35; }
+.url { direction: ltr; text-align: right; font-size: 20px; font-weight: 800; color: var(--blue); word-break: break-all; }
+.count { align-self: flex-start; background: linear-gradient(100deg, var(--green), #07845f); color: #fff; font-weight: 800; font-size: 20px; padding: 6px 18px; border-radius: 12px; }
+.names { left: 70px; width: 470px; top: 535px; height: 160px; overflow: hidden; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 8px; }
+.nchip { padding: 5px 14px; border-radius: 30px; font-weight: 700; font-size: 16px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(207, 180, 96, 0.4); animation: zoom 0.5s var(--ease) both; animation-delay: calc(0.03s * var(--i)); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ----- السؤال ----- */
+.s-chip { right: 120px; top: 44px; font-size: 22px; padding: 6px 22px; }
+.s-ring { left: 110px; top: 100px; }
+.ring.xl { width: 230px; height: 230px; }
+.ring.xl circle { stroke-width: 9; }
+.ring.xl b { font-size: 92px; }
+body.light .ring .r0 { stroke: rgba(23, 38, 79, 0.1); }
+body.light .ring b { color: var(--navy); }
+body.light .ring.hurry b { color: var(--bad); }
+.s-ans { z-index: 1; left: 140px; top: 345px; width: 170px; display: flex; flex-direction: column; align-items: center; padding: 8px; border-radius: 18px; background: #fff; color: var(--ink); box-shadow: 0 16px 40px -22px rgba(23, 38, 79, 0.6); }
+.s-ans b { font-size: 40px; font-weight: 800; line-height: 1.1; direction: ltr; color: var(--blue); }
+.s-ans small { font-weight: 700; color: var(--ink2); }
+.s-qcard { width: auto; right: 120px; left: 400px; top: 100px; height: 300px; display: flex; align-items: center; padding: 30px 48px; border-radius: 30px; border-inline-start-width: 8px; box-shadow: 0 22px 50px -22px rgba(23, 38, 79, 0.45); }
+.s-qcard p { font-size: 40px; line-height: 1.6; font-weight: 800; color: var(--ink); }
+.s-opts { left: 110px; right: 120px; top: 440px; height: 240px; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 18px 22px; }
+.s-opts .opt, .s-bars .opt { cursor: default; font-size: 28px; font-weight: 800; padding: 12px 20px; gap: 18px; border-radius: 22px; border: 0; border-inline-start: 6px solid var(--c); box-shadow: 0 16px 40px -22px rgba(23, 38, 79, 0.55); }
+.s-opts .opt .let, .s-bars .opt .let { width: 60px; height: 60px; border-radius: 18px; font-size: 30px; }
+#q.enter .s-opts .opt { animation: rise 0.7s var(--ease) both; }
+#q.enter .s-opts .opt:nth-child(2) { animation-delay: 0.1s; }
+#q.enter .s-opts .opt:nth-child(3) { animation-delay: 0.2s; }
+#q.enter .s-opts .opt:nth-child(4) { animation-delay: 0.3s; }
+
+/* ----- النتيجة ----- */
+.s-h2 { right: 120px; left: 110px; top: 100px; font-size: 38px; line-height: 1.55; color: var(--navy); background: linear-gradient(100deg, var(--navy) 30%, var(--blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.s-bars { left: 110px; right: 120px; top: 250px; display: flex; flex-direction: column; gap: 16px; }
+.s-bars .opt { position: relative; overflow: hidden; min-height: 88px; animation: rise 0.6s var(--ease) both; animation-delay: calc(0.12s * var(--i)); }
+.s-bars .opt > i { position: absolute; inset-block: 0; inset-inline-start: 0; width: var(--w); background: var(--c); opacity: 0.18; animation: fill 1.2s 0.4s var(--ease) both; }
+.s-bars .opt .let, .s-bars .opt .txt { position: relative; }
+.s-bars .opt b { position: relative; font-size: 28px; direction: ltr; color: var(--ink2); }
+.s-bars .opt:not(.right) { opacity: 0.6; }
+.s-bars .opt.right { box-shadow: 0 0 0 5px rgba(4, 165, 117, 0.4), 0 20px 50px -20px rgba(4, 165, 117, 0.7); transform: scale(1.02); }
+.s-bars .opt.right .txt::after { content: "  ✓"; color: var(--green); }
+
+/* ----- الترتيب ----- */
+.s-ev2 { right: 120px; top: 50px; font-size: 20px; direction: ltr; }
+.s-btitle { right: 120px; top: 100px; font-size: 66px; }
+.s-podium { left: 70px; width: 640px; top: 140px; height: 540px; gap: 22px; }
+.s-podium .pod { max-width: 200px; }
+.s-podium .medal { font-size: 52px; }
+.s-podium .pn { font-size: 26px; }
+.s-podium .ps { font-size: 24px; }
+.s-podium .p1 .pbar { height: 330px; }
+.s-podium .p2 .pbar { height: 245px; }
+.s-podium .p3 .pbar { height: 180px; }
+.s-podium .pbar b { font-size: 70px; }
+.s-list { right: 120px; width: 470px; top: 230px; gap: 10px; }
+.s-list .row { font-size: 22px; padding: 12px 18px; }
+.s-list .row .rk { width: 40px; }
+body.screen.light .circ { opacity: 0; }
