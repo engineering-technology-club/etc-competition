@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>لوحة التحكم - ETC</title>
+    <meta name="theme-color" content="#02030a" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="images/club-app-icon.png" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <main>
+      <img class="logo" src="images/club-logo.png" alt="ETC" />
+      <section id="lg" class="v">
+        <h1>لوحة التحكم</h1>
+        <div class="card">
+          <input
+            id="em"
+            type="email"
+            placeholder="الإيميل"
+            autocomplete="username"
+          /><input
+            id="pw"
+            type="password"
+            placeholder="كلمة السر"
+            autocomplete="current-password"
+          /><button id="in">دخول</button>
+        </div>
+      </section>
+      <section id="ad" class="v" hidden>
+        <div class="card">
+          <input id="fl" type="file" accept=".json" /><span
+            class="mut"
+            id="bk"
+          ></span>
+        </div>
+        <div class="card stats">
+          <div><b id="pc">0</b>مسجلين</div>
+          <div><b id="ac">0</b>أجابوا</div>
+          <div><b id="tm">-</b>ثانية</div>
+        </div>
+        <div class="card">
+          <label class="mut" for="du">مدة السؤال بالثواني</label
+          ><input id="du" type="number" min="5" max="120" value="20" />
+        </div>
+        <div class="card"><h2 id="qt">جاهز</h2></div>
+        <div id="res_view" class="card" hidden></div>
+        <div class="btns">
+          <button id="st">ابدأ السؤال</button>
+          <button id="en" class="bad" hidden>إنهاء السؤال</button>
+          <button id="sh_bd" class="ghost" hidden>عرض الترتيب</button>
+          <button id="rs" class="ghost">تصفير المسابقة</button>
+        </div>
+        <div id="ls"></div>
+      </section>
+    </main>
+    <script type="module">
+      import { db, app } from "./firebase-config.js";
+      import {
+        getAuth,
+        signInWithEmailAndPassword,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+      import {
+        doc,
+        getDoc,
+        setDoc,
+        updateDoc,
+        collection,
+        query,
+        where,
+        getDocs,
+        onSnapshot,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+      const $ = (i) => document.getElementById(i);
+      const show = (i) =>
+        document.querySelectorAll(".v").forEach((e) => (e.hidden = e.id != i));
+      const el = (t, c, x) => {
+        const e = document.createElement(t);
+        if (c) e.className = c;
+        if (x != null) e.textContent = x;
+        return e;
+      };
+      const auth = getAuth(app);
+      let bank = [],
+        players = {},
+        scores = {},
+        idx = 0,
+        run = "",
+        st = {},
+        busy = false,
+        unsubA = null,
+        started = false;
+
+      $("in").onclick = () =>
+        signInWithEmailAndPassword(auth, $("em").value, $("pw").value).catch(
+          () => alert("خطأ بالدخول"),
+        );
+      onAuthStateChanged(auth, (u) => {
+        if (u && !started) {
+          started = true;
+          init();
+        } else if (!u) show("lg");
+      });
+      $("fl").onchange = async (e) => {
+        try {
+          const l = JSON.parse(await e.target.files[0].text());
+          if (!Array.isArray(l)) throw 0;
+          await setDoc(doc(db, "bank", "main"), { list: l });
+          bank = l;
+          $("bk").textContent = l.length + " سؤال انحفظوا";
+          draw();
+        } catch (x) {
+          alert("الملف غير صحيح");
+        }
+      };
+      async function init() {
+        show("ad");
+        bank = (await getDoc(doc(db, "bank", "main"))).data()?.list || [];
+        $("bk").textContent = bank.length
+          ? bank.length + " سؤال محمّلين"
+          : "ارفع ملف (questions.json)";
+        onSnapshot(collection(db, "players"), (c) => {
+          c.forEach((d) => (players[d.id] = d.data().name));
+          $("pc").textContent = c.size;
+        });
+        const first = (await getDoc(doc(db, "live", "state"))).data() || {};
+        run = first.run || "";
+        idx =
+          first.idx != null
+            ? first.idx + (first.phase == "question" ? 0 : 1)
+            : 0;
+        (first.board || []).forEach(
+          (x) => (scores[x.u] = { n: x.n, s: x.s, d: 0 }),
+        );
+
+        onSnapshot(doc(db, "live", "state"), (s) => {
+          st = s.data() || {};
+          if (st.phase == "question" && st.startedAt) {
+            unsubA && unsubA();
+            unsubA = onSnapshot(
+              query(collection(db, "answers"), where("q", "==", st.qid)),
+              (c) => ($("ac").textContent = c.size),
+            );
+          }
+          draw();
+        });
+        setInterval(() => {
+          if (st.phase == "question" && st.startedAt) {
+            const left = Math.max(
+              0,
+              Math.ceil(
+                st.duration - (Date.now() - st.startedAt.toMillis()) / 1000,
+              ),
+            );
+            $("tm").textContent = left;
+            if (left === 0) $("tm").style.color = "var(--bad)";
+            else $("tm").style.color = "var(--c)";
+          } else {
+            $("tm").textContent = "-";
+          }
+        }, 250);
+      }
+      function draw() {
+        const p = st.phase;
+        $("qt").textContent =
+          p == "question"
+            ? st.text
+            : p == "results"
+              ? "إحصائيات الإجابات"
+              : p == "board"
+                ? "ترتيب الأوائل"
+                : p == "final"
+                  ? "النهاية"
+                  : "جاهز";
+
+        $("st").hidden = p == "question" || p == "results";
+        $("st").textContent =
+          idx < bank.length
+            ? p == "board"
+              ? "السؤال التالي"
+              : `ابدأ السؤال \${idx+1}`
+            : "انتهت الأسئلة";
+        $("en").hidden = p != "question";
+        $("sh_bd").hidden = p != "results";
+
+        const rv = $("res_view");
+        if (p == "results") {
+          rv.hidden = false;
+          rv.replaceChildren();
+          const max = Math.max(...st.stats, 1);
+          st.options.forEach((opt, i) => {
+            const bar = el(
+              "div",
+              "res-bar" + (st.correct == i ? " correct" : ""),
+            );
+            const f = el("div", "res-fill");
+            f.style.width = (st.stats[i] / max) * 100 + "%";
+            bar.append(
+              f,
+              el("span", "", opt),
+              el("span", "", st.stats[i] + " إجابة"),
+            );
+            rv.append(bar);
+          });
+        } else {
+          rv.hidden = true;
+        }
+
+        const ls = $("ls");
+        ls.replaceChildren();
+        if (p == "board" || p == "final") {
+          (st.board || []).slice(0, 10).forEach((x, k) => {
+            const r = el("div", "row" + (k < 3 ? " top t" + k : ""));
+            r.append(
+              el("span", "", k + 1),
+              el("span", "", x.n),
+              el("b", "", x.s),
+            );
+            if (x.d) r.append(el("small", "", "+" + x.d));
+            ls.append(r);
+          });
+        }
+      }
+
+      $("st").onclick = async () => {
+        if (!bank[idx]) return;
+        if (!run) run = Date.now().toString(36);
+        const q = bank[idx];
+        $("ac").textContent = 0;
+        await setDoc(doc(db, "live", "state"), {
+          phase: "question",
+          run,
+          idx,
+          total: bank.length,
+          qid: run + "-" + idx,
+          text: q.q,
+          options: q.o,
+          duration: +$("du").value || 20,
+          startedAt: serverTimestamp(),
+          board: st.board || [],
+        });
+      };
+
+      $("en").onclick = async () => {
+        if (busy || st.phase != "question") return;
+        busy = true;
+        try {
+          const q = bank[st.idx],
+            t0 = st.startedAt.toMillis(),
+            D = st.duration * 1000,
+            pts = {},
+            stats = [0, 0, 0, 0];
+          (
+            await getDocs(
+              query(collection(db, "answers"), where("q", "==", st.qid)),
+            )
+          ).forEach((d) => {
+            const a = d.data();
+            players[a.u] = a.n;
+            stats[a.c]++;
+            if (a.c !== q.a) return;
+            const el = Math.min(Math.max(a.t.toMillis() - t0, 0), D);
+            pts[a.u] = Math.round(500 + 500 * (1 - el / D));
+          });
+          Object.keys(players).forEach((u) => {
+            const p = scores[u] || (scores[u] = { s: 0 });
+            p.n = players[u];
+            p.d = pts[u] || 0;
+            p.s += p.d;
+          });
+          const board = Object.entries(scores)
+            .map(([u, p]) => ({ u, n: p.n, s: p.s, d: p.d }))
+            .sort((a, b) => b.s - a.s);
+          await updateDoc(doc(db, "live", "state"), {
+            phase: "results",
+            correct: q.a,
+            board,
+            stats,
+            options: q.o,
+          });
+          idx++;
+        } catch (e) {
+          alert("خطأ: " + e.message);
+        }
+        busy = false;
+      };
+
+      $("sh_bd").onclick = () =>
+        updateDoc(doc(db, "live", "state"), {
+          phase: idx >= bank.length ? "final" : "board",
+        });
+
+      $("rs").onclick = async () => {
+        if (!confirm("متأكد من التصفير؟")) return;
+        scores = {};
+        idx = 0;
+        run = "";
+        await setDoc(doc(db, "live", "state"), { phase: "lobby", board: [] });
+      };
+    </script>
+  </body>
+</html>

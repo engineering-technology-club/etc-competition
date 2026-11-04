@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // بدّل الإيميل بإيميل الأدمن اللي بتعمله في Firebase Authentication
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'admin@gmail.com';
+    }
+    function live() { return get(/databases/$(database)/documents/live/state).data; }
+
+    // حالة المسابقة الحالية: الكل بيقرأ، الأدمن بس بيكتب
+    match /live/{d} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // بنك الأسئلة (فيه الإجابات الصحيحة): الأدمن بس
+    match /bank/{d} {
+      allow read, write: if isAdmin();
+    }
+
+    match /players/{p} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, update: if request.resource.data.keys().hasOnly(['name', 'joinedAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 30
+        && request.resource.data.joinedAt == request.time;
+    }
+
+    // الإجابات: مرة وحدة لكل لاعب، فقط والسؤال مفتوح، والوقت بيحسبه السيرفر
+    match /answers/{a} {
+      allow read: if isAdmin();
+      allow create: if live().phase == 'question'
+        && request.resource.data.keys().hasOnly(['u', 'n', 'c', 'q', 't'])
+        && a == live().qid + '_' + request.resource.data.u
+        && request.resource.data.q == live().qid
+        && request.resource.data.c is int
+        && request.resource.data.c >= 0 && request.resource.data.c < 4
+        && request.resource.data.n is string && request.resource.data.n.size() <= 30
+        && request.resource.data.t == request.time
+        && request.time < live().startedAt + duration.value(live().duration, 's');
+    }
+  }
+}
